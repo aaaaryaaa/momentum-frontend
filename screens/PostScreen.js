@@ -202,9 +202,19 @@ const PostScreen = ({ navigation, userInfo }) => {
 
         // Upload to S3
         await uploadVideoToS3(upload_url, video.uri);
+
+        // Construct the proper S3 URL for the uploaded video
+        const s3_url = upload_url.split('?')[0]; // Remove query parameters from presigned URL 
         
+        // // Set the uploaded video as selected
+        // setSelectedVideo({ id: video_id, uri: video.uri, isNewUpload: true });
         // Set the uploaded video as selected
-        setSelectedVideo({ id: video_id, uri: video.uri, isNewUpload: true });
+        setSelectedVideo({ 
+            id: video_id, 
+            uri: video.uri, 
+            s3_url: s3_url, 
+            isNewUpload: true 
+        });
         Alert.alert('Success', 'Video uploaded successfully!');
         fetchUserVideos(); // Refresh video list
 
@@ -253,11 +263,18 @@ const PostScreen = ({ navigation, userInfo }) => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        // body: JSON.stringify({
+        //   video_id: selectedVideo.id,
+        //   caption: caption.trim(),
+        //   category: category,
+        //   thread_id: selectedThread?.id || null,
+        // }),
         body: JSON.stringify({
-          video_id: selectedVideo.id,
-          caption: caption.trim(),
-          category: category,
-          thread_id: selectedThread?.id || null,
+        video_id: selectedVideo.id,
+        video_url: selectedVideo.s3_url, //|| selectedVideo.uri, // Use s3_url if available, fallback to uri
+        caption: caption.trim(),
+        category: category,
+        thread_id: selectedThread?.id || null,
         }),
       });
 

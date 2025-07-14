@@ -9,6 +9,7 @@ import ChatScreen from './screens/ChatScreen';
 import VideoScreen from './screens/VideoScreen';
 import PostScreen from './screens/PostScreen';
 import FeedScreen from './screens/FeedScreen';
+import ThreadScreen from './screens/ThreadScreen';
 
 const Stack = createStackNavigator();
 
@@ -80,6 +81,11 @@ export default function App() {
             <Stack.Screen name="Feed">
               {props => <FeedScreen {...props} userInfo={userInfo} />}
             </Stack.Screen>
+            <Stack.Screen 
+              name="Thread" 
+              component={ThreadScreen} 
+              options={{ headerShown: false }} 
+            />
           </>
         ) : (
           <>

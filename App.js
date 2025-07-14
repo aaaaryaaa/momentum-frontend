@@ -7,6 +7,8 @@ import SignupScreen from './screens/SignupScreen';
 import HomeScreen from './screens/HomeScreen';
 import ChatScreen from './screens/ChatScreen';
 import VideoScreen from './screens/VideoScreen';
+import PostScreen from './screens/PostScreen';
+import FeedScreen from './screens/FeedScreen';
 
 const Stack = createStackNavigator();
 
@@ -71,6 +73,12 @@ export default function App() {
             </Stack.Screen>
             <Stack.Screen name="Video">
               {props => <VideoScreen {...props} userInfo={userInfo} />}
+            </Stack.Screen>
+            <Stack.Screen name="Post">
+              {props => <PostScreen {...props} userInfo={userInfo} />}
+            </Stack.Screen>
+            <Stack.Screen name="Feed">
+              {props => <FeedScreen {...props} userInfo={userInfo} />}
             </Stack.Screen>
           </>
         ) : (

@@ -400,6 +400,8 @@ export default function HomeScreen({ onLogout }) {
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userStreak, setUserStreak] = useState(null);
+  const [userPostsNumber, setUserPostsNumber] = useState(0);
+  const [userNudgesNumber, setUserNudgesNumber] = useState(0);
   const [recentActivity, setRecentActivity] = useState([]);
 
   const fetchUserInfo = async () => {
@@ -420,6 +422,8 @@ export default function HomeScreen({ onLogout }) {
       if (meResponse.ok) {
         setUserInfo(data);
         await fetchUserStreak(token);
+        await fetchUserPostsNumber(token);
+        await fetchUserNudgesNumber(token);
         await fetchRecentActivity(token);
       } else {
         Alert.alert('Error', data.message || 'Failed to fetch user');
@@ -435,7 +439,7 @@ export default function HomeScreen({ onLogout }) {
 
   const fetchUserStreak = async (token) => {
     try {
-      const response = await fetch('http://localhost:8082/streak', {
+      const response = await fetch('http://aarya.live:8082/streak', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -446,15 +450,44 @@ export default function HomeScreen({ onLogout }) {
       console.log('Error fetching streak:', error);
     }
   };
-
-  const fetchRecentActivity = async (token) => {
+  
+  const fetchUserPostsNumber = async (token) => {
     try {
-      const response = await fetch('http://localhost:8082/feed?limit=3', {
+      const response = await fetch('http://aarya.live:8082/myposts', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
         const data = await response.json();
-        setRecentActivity(data || []);
+        setUserPostsNumber(data.length);
+      }
+    } catch (error) {
+      console.log('Error fetching posts number:', error);
+    }
+  };
+  
+  const fetchUserNudgesNumber = async (token) => {
+    try {
+      const response = await fetch('http://aarya.live:8082/myposts', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const totalNudges = data.reduce((sum, post) => sum + (post.nudges || 0), 0);
+        setUserNudgesNumber(totalNudges);
+      }
+    } catch (error) {
+      console.log('Error fetching nudges number:', error);
+    }
+  };
+
+  const fetchRecentActivity = async (token) => {
+    try {
+      const response = await fetch('http://aarya.live:8082/feed?limit=3', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setRecentActivity([data[0], data[1], data[2] ] || []);
       }
     } catch (error) {
       console.log('Error fetching recent activity:', error);
@@ -517,13 +550,13 @@ export default function HomeScreen({ onLogout }) {
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <MaterialIcons name="thumb-up" size={24} color="#007bff" />
-            <Text style={styles.statNumber}>{userStreak?.total_nudges || 0}</Text>
+            <Text style={styles.statNumber}>{userNudgesNumber || 0}</Text>
             <Text style={styles.statLabel}>Total Nudges</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <MaterialIcons name="video-library" size={24} color="#28a745" />
-            <Text style={styles.statNumber}>{userStreak?.total_posts || 0}</Text>
+            <Text style={styles.statNumber}>{userPostsNumber || 0}</Text>
             <Text style={styles.statLabel}>Posts</Text>
           </View>
         </View>
@@ -581,9 +614,18 @@ export default function HomeScreen({ onLogout }) {
             <Text style={styles.secondaryActionTitle}>Videos</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          {/* <TouchableOpacity 
             style={styles.secondaryActionButton} 
             onPress={() => navigation.navigate('Feed')}
+          >
+            <View style={styles.secondaryActionIcon}>
+              <MaterialIcons name="leaderboard" size={24} color="#ffc107" />
+            </View>
+            <Text style={styles.secondaryActionTitle}>Leaderboard</Text>
+          </TouchableOpacity> */}
+          <TouchableOpacity
+            style={styles.secondaryActionButton} 
+            onPress={() => navigation.navigate('Leaderboard')}
           >
             <View style={styles.secondaryActionIcon}>
               <MaterialIcons name="leaderboard" size={24} color="#ffc107" />

@@ -893,6 +893,44 @@ const VideoScreen = ({ navigation, userInfo }) => {
   }
 };
 
+  // Convert .mov to .mp4 if needed
+  const convertVideoIfNeeded = async (videoUri) => {
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(videoUri);
+      
+      if (!fileInfo.exists) {
+        throw new Error('Video file does not exist');
+      }
+
+      // Check if the file is .mov
+      if (videoUri.toLowerCase().endsWith('.mov')) {
+        console.log('Converting .mov to .mp4...');
+        
+        // Create new filename with .mp4 extension
+        const newUri = videoUri.replace(/\.mov$/i, '.mp4');
+        
+        // On iOS, we can try to copy and rename
+        if (Platform.OS === 'ios') {
+          await FileSystem.copyAsync({
+            from: videoUri,
+            to: newUri,
+          });
+          
+          // Delete original .mov file
+          await FileSystem.deleteAsync(videoUri);
+          
+          console.log('Video converted to .mp4');
+          return newUri;
+        }
+      }
+      
+      return videoUri;
+    } catch (error) {
+      console.error('Error converting video:', error);
+      return videoUri;
+    }
+  };
+
   // Handle video selection and upload
   const handleVideoUpload = async () => {
     console.log('🎬 Video upload button pressed!');
@@ -929,6 +967,7 @@ const VideoScreen = ({ navigation, userInfo }) => {
 
       const video = result.assets[0];
       console.log('Selected video:', video);
+      const convertedUri = await convertVideoIfNeeded(video.uri);
 
       try {
         setUploading(true);
@@ -970,7 +1009,9 @@ const VideoScreen = ({ navigation, userInfo }) => {
 
         // Step 2: Upload video to S3 using the fixed method
         console.log('Uploading video to S3...');
-        await uploadVideoToS3(upload_url, video.uri);
+        // await uploadVideoToS3(upload_url, video.uri);
+        // use convertedUri instead of video.uri for the upload:
+        await uploadVideoToS3(upload_url, convertedUri);
         
         console.log('Video uploaded successfully!');
         Alert.alert('Success', 'Video uploaded successfully!');
@@ -1125,7 +1166,7 @@ const VideoScreen = ({ navigation, userInfo }) => {
           <MaterialIcons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Videos</Text>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.uploadButton}
           onPress={handleVideoUpload}
           disabled={uploading}
@@ -1135,7 +1176,26 @@ const VideoScreen = ({ navigation, userInfo }) => {
           ) : (
             <MaterialIcons name="add" size={24} color="#007bff" />
           )}
+        </TouchableOpacity> */}
+        <View style={styles.headerButtons}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => navigation.navigate('Camera')}
+        >
+          <MaterialIcons name="videocam" size={24} color="#007bff" />
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={handleVideoUpload}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <ActivityIndicator color="#007bff" />
+          ) : (
+            <MaterialIcons name="add" size={24} color="#007bff" />
+          )}
+        </TouchableOpacity>
+      </View>
       </View>
 
       {/* User Info */}
@@ -1211,9 +1271,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  uploadButton: {
-    padding: 8,
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
+  headerButton: {
+    marginLeft: 15,
+    padding: 5,
+  },
+
   userInfo: {
     backgroundColor: '#fff',
     padding: 16,

@@ -9,8 +9,6 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
-  Modal,
-  FlatList,
   Dimensions,
   Share,
 } from 'react-native';
@@ -23,17 +21,15 @@ const { width, height } = Dimensions.get('window');
 
 const FeedScreen = ({ navigation, userInfo }) => {
   const [posts, setPosts] = useState([]);
+  const [userFullName, setUserFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [playingVideo, setPlayingVideo] = useState(null);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [leaderboardData, setLeaderboardData] = useState([]);
-  const [streakLeaderboard, setStreakLeaderboard] = useState([]);
   const [userStreak, setUserStreak] = useState(null);
-  const [leaderboardType, setLeaderboardType] = useState('nudge'); // 'nudge' or 'streak'
   const [selectedCategory, setSelectedCategory] = useState('');
 
   const API_BASE_URL = 'http://aarya.live:8082';
+  const AUTH_API_BASE_URL = 'http://aarya.live:8000';
 
   // Categories list
   const categories = [
@@ -44,6 +40,43 @@ const FeedScreen = ({ navigation, userInfo }) => {
   // Common reaction emojis
   const reactionEmojis = ['🔥', '💪', '👏', '❤️', '😮', '🎉', '💯', '🚀'];
 
+  const fetchUserFullName = async (userId) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      
+      if (!token) {
+        Alert.alert('Error', 'Please login first');
+        navigation.navigate('Login');
+        return '';
+      }
+
+      const response = await fetch(`${AUTH_API_BASE_URL}/get-user`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',  // Add this header
+        },
+        body: JSON.stringify({  // Use JSON.stringify
+          "user_id": userId
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.name;  // Return the name directly
+      } else if (response.status === 401) {
+        Alert.alert('Session Expired', 'Please login again');
+        navigation.navigate('Home');
+        return '';
+      } else {
+        throw new Error('Failed to fetch user full name');
+      }
+    } catch (error) {
+      console.error('Error fetching user full name:', error);
+      return '';  // Return empty string on error instead of showing alert
+    }
+  };
+  
   // Fetch feed posts
   const fetchFeed = async () => {
     try {
@@ -66,7 +99,17 @@ const FeedScreen = ({ navigation, userInfo }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setPosts(data || []);
+        // setPosts(data || []);
+         
+        // Fetch user names for all posts
+        const postsWithUserNames = await Promise.all(
+          data.map(async (post) => {
+            const userName = await fetchUserFullName(post.user_id);
+            return { ...post, user_name: userName };
+          })
+        );
+        
+        setPosts(postsWithUserNames || []);
       } else if (response.status === 401) {
         Alert.alert('Session Expired', 'Please login again');
         navigation.navigate('Home');
@@ -262,11 +305,10 @@ const FeedScreen = ({ navigation, userInfo }) => {
     setRefreshing(true);
     await Promise.all([
       fetchFeed(),
-      fetchUserStreak(),
-      fetchLeaderboard(leaderboardType, selectedCategory)
+      fetchUserStreak()
     ]);
     setRefreshing(false);
-  }, [leaderboardType, selectedCategory]);
+  }, []);
 
   // Handle leaderboard type change
   const handleLeaderboardTypeChange = (type) => {
@@ -279,9 +321,7 @@ const FeedScreen = ({ navigation, userInfo }) => {
     useCallback(() => {
       fetchFeed();
       fetchUserStreak();
-      fetchLeaderboard('nudge', selectedCategory);
-      fetchLeaderboard('streak', selectedCategory);
-    }, [selectedCategory])
+    }, [])
   );
 
   // Render post item
@@ -292,7 +332,7 @@ const FeedScreen = ({ navigation, userInfo }) => {
         <View style={styles.postUserInfo}>
           <MaterialIcons name="account-circle" size={32} color="#666" />
           <View style={styles.postUserDetails}>
-            <Text style={styles.postUserName}>User {post.user_id}</Text>
+            <Text style={styles.postUserName}>{post.user_name || `User ${post.user_id}`}</Text>
             <Text style={styles.postDate}>
               {new Date(post.created_at).toLocaleDateString()}
             </Text>
@@ -443,7 +483,7 @@ const FeedScreen = ({ navigation, userInfo }) => {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.headerButton}
-            onPress={() => setShowLeaderboard(true)}
+            onPress={() => navigation.navigate('Leaderboard')}
           >
             <MaterialIcons name="leaderboard" size={24} color="#007bff" />
           </TouchableOpacity>
@@ -531,75 +571,7 @@ const FeedScreen = ({ navigation, userInfo }) => {
         )}
       </ScrollView>
 
-      {/* Leaderboard Modal */}
-      <Modal
-        visible={showLeaderboard}
-        animationType="slide"
-        transparent={true}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Leaderboard</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setShowLeaderboard(false)}
-              >
-                <MaterialIcons name="close" size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Leaderboard Type Toggle */}
-            <View style={styles.leaderboardToggle}>
-              <TouchableOpacity
-                style={[
-                  styles.toggleButton,
-                  leaderboardType === 'nudge' && styles.toggleButtonActive
-                ]}
-                onPress={() => handleLeaderboardTypeChange('nudge')}
-              >
-                <Text style={[
-                  styles.toggleButtonText,
-                  leaderboardType === 'nudge' && styles.toggleButtonTextActive
-                ]}>
-                  Nudge Leaders
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.toggleButton,
-                  leaderboardType === 'streak' && styles.toggleButtonActive
-                ]}
-                onPress={() => handleLeaderboardTypeChange('streak')}
-              >
-                <Text style={[
-                  styles.toggleButtonText,
-                  leaderboardType === 'streak' && styles.toggleButtonTextActive
-                ]}>
-                  Streak Leaders
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Leaderboard List */}
-            <FlatList
-              data={leaderboardType === 'nudge' ? leaderboardData : streakLeaderboard}
-              renderItem={renderLeaderboardItem}
-              keyExtractor={(item) => item.user_id.toString()}
-              contentContainerStyle={styles.leaderboardList}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <MaterialIcons name="leaderboard" size={48} color="#ccc" />
-                  <Text style={styles.emptyText}>No data yet</Text>
-                  <Text style={styles.emptySubtext}>
-                    Start posting to see leaderboard data
-                  </Text>
-                </View>
-              }
-            />
-          </View>
-        </View>
-      </Modal>
+      
     </View>
   );
 };

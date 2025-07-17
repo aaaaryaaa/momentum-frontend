@@ -1,0 +1,17 @@
+{
+  "cli": {
+    "version": ">= 3.0.0"
+  },
+  "build": {
+    "android": {
+      "release": {
+        "workflow": "managed"
+      }
+    },
+    "ios": {
+      "release": {
+        "workflow": "managed"
+      }
+    }
+  }
+}

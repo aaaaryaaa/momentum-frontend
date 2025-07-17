@@ -23,7 +23,9 @@
     "expo-file-system": "~18.1.11",
     "react-dom": "19.0.0",
     "react-native-web": "^0.20.0",
-    "@expo/metro-runtime": "~5.0.4"
+    "@expo/metro-runtime": "~5.0.4",
+    "expo-linear-gradient": "~14.1.5",
+    "expo-camera": "~15.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

@@ -7,6 +7,12 @@ import SignupScreen from './screens/SignupScreen';
 import HomeScreen from './screens/HomeScreen';
 import ChatScreen from './screens/ChatScreen';
 import VideoScreen from './screens/VideoScreen';
+import PostScreen from './screens/PostScreen';
+import FeedScreen from './screens/FeedScreen';
+import ThreadScreen from './screens/ThreadScreen';
+import CameraScreen from './screens/CameraScreen';
+import SplashVideoScreen from './screens/SplashVideoScreen';
+import LeaderboardScreen from './screens/LeaderboardScreen';
 
 const Stack = createStackNavigator();
 
@@ -61,6 +67,11 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen
+          name="SplashVideo"
+          component={SplashVideoScreen}
+          options={{ headerShown: false }}
+        />
         {isLoggedIn ? (
           <>
             <Stack.Screen name="Home">
@@ -72,6 +83,23 @@ export default function App() {
             <Stack.Screen name="Video">
               {props => <VideoScreen {...props} userInfo={userInfo} />}
             </Stack.Screen>
+            <Stack.Screen name="Post">
+              {props => <PostScreen {...props} userInfo={userInfo} />}
+            </Stack.Screen>
+            <Stack.Screen name="Feed">
+              {props => <FeedScreen {...props} userInfo={userInfo} />}
+            </Stack.Screen>
+            <Stack.Screen 
+              name="Thread" 
+              component={ThreadScreen} 
+              options={{ headerShown: false }} 
+            />
+            <Stack.Screen 
+              name="Camera" 
+              component={CameraScreen} 
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
           </>
         ) : (
           <>
